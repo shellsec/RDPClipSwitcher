@@ -32,6 +32,8 @@ How it works: writes the equivalent GPO registry keys and runs `gpupdate /force`
 
 **Not supported**: Home editions (no inbound RDP host by default), Linux xrdp, older Server versions (2008 R2 / 2012 R2) not verified.
 
+**Script encoding**: all `.ps1` files are UTF-8 with BOM; UI text is English (ASCII) for compatibility with Windows PowerShell 4.0+ on GBK systems. If you see garbled Chinese / parser errors, re-download the latest scripts from GitHub.
+
 ## Files
 
 | File | Description |
@@ -70,13 +72,20 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 Menu:
 
 ```
-  1) Allow clipboard (enable copy/paste)
-  2) Block clipboard (disable copy/paste)
-  3) Show current status
-  4) Allow drive redirection (enable file channel)
-  5) Block drive redirection (disable file channel)
+  Quick (clipboard + drives together):
+  1) Allow ALL  (text copy/paste + files)
+  2) Block ALL  (text copy/paste + files)
+  Clipboard only (text):
+  3) Allow clipboard
+  4) Block clipboard
+  Drive only (files):
+  5) Allow drives
+  6) Block drives
+  7) Show current status
   0) Exit
 ```
+
+**Note:** Clipboard (`fDisableClip`) and drive (`fDisableCdm`) are separate Windows policies. Option `2` blocks text only; use `2` Block ALL or option `6` to also block files. Most users should use `1` / `2`.
 
 ### Option B: Individual scripts
 
@@ -177,6 +186,8 @@ Or use menu option `3` for a summary of GPO keys, RDP-Tcp override, and effectiv
 
 **不适用**：Home 版（默认不能作 RDP 主机）、Linux xrdp、未经验证的旧版 Server（2008 R2 / 2012 R2）。
 
+**脚本编码**：所有 `.ps1` 为 UTF-8 BOM；界面文案为英文（ASCII），兼容 GBK 环境下的 Windows PowerShell 4.0+。若出现中文乱码或 ParserError，请从 GitHub 重新下载最新脚本。
+
 ## 文件说明
 
 | 文件 | 说明 |
@@ -215,13 +226,20 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 菜单选项：
 
 ```
-  1) 允许剪贴板（开复制粘贴）
-  2) 禁止剪贴板（关复制粘贴）
-  3) 查看当前状态
-  4) 允许驱动器重定向（开文件通道）
-  5) 禁止驱动器重定向（关文件通道）
-  0) 退出
+  Quick (clipboard + drives together):
+  1) Allow ALL  (text copy/paste + files)
+  2) Block ALL  (text copy/paste + files)
+  Clipboard only (text):
+  3) Allow clipboard
+  4) Block clipboard
+  Drive only (files):
+  5) Allow drives
+  6) Block drives
+  7) Show current status
+  0) Exit
 ```
+
+**说明：** 剪贴板（`fDisableClip`）与驱动器（`fDisableCdm`）是 Windows 里两条独立策略。以前选 `2` 只关文本复制；要一起关文件通道请选 `2` Block ALL 或 `6`。日常建议直接用 `1` / `2`。
 
 ### 方式二：单条脚本
 
