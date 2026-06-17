@@ -11,6 +11,8 @@
     They are separate GPO policies; use 1/2 to change both at once.
 #>
 
+. "$PSScriptRoot\RDPClipSwitcher-Lib.ps1"
+
 $PolicyKey = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services"
 $TcpKey    = "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp"
 
@@ -86,47 +88,57 @@ function Set-AllAllow {
     Set-ClipboardRegistry -DisableValue 0
     Set-DriveRegistry -DisableValue 0
     Apply-PolicyUpdate
-    Write-Host "ALL ALLOWED: clipboard (text) + drives (files). Reconnect your RDP session." -ForegroundColor Green
+    Restart-RdpClip
+    Write-Host "ALL ALLOWED: clipboard (text) + drives (files)." -ForegroundColor Green
 }
 
 function Set-AllBlock {
     Set-ClipboardRegistry -DisableValue 1
     Set-DriveRegistry -DisableValue 1
     Apply-PolicyUpdate
-    Write-Host "ALL BLOCKED: clipboard (text) + drives (files). Reconnect your RDP session." -ForegroundColor Yellow
+    Restart-RdpClip
+    Write-Host "ALL BLOCKED: clipboard (text) + drives (files)." -ForegroundColor Yellow
 }
 
 function Set-ClipboardAllow {
     Set-ClipboardRegistry -DisableValue 0
     Apply-PolicyUpdate
-    Write-Host "Clipboard (text only): ALLOWED. Reconnect your RDP session." -ForegroundColor Green
+    Restart-RdpClip
+    Write-Host "Clipboard (text only): ALLOWED." -ForegroundColor Green
 }
 
 function Set-ClipboardBlock {
     Set-ClipboardRegistry -DisableValue 1
     Apply-PolicyUpdate
-    Write-Host "Clipboard (text only): BLOCKED. Reconnect your RDP session." -ForegroundColor Yellow
+    Restart-RdpClip
+    Write-Host "Clipboard (text only): BLOCKED." -ForegroundColor Yellow
 }
 
 function Set-DriveAllow {
     Set-DriveRegistry -DisableValue 0
     Apply-PolicyUpdate
-    Write-Host "Drives (files only): ALLOWED. Reconnect your RDP session." -ForegroundColor Green
+    Write-Host "Drives (files only): ALLOWED. Reconnect RDP if files still fail." -ForegroundColor Green
 }
 
 function Set-DriveBlock {
     Set-DriveRegistry -DisableValue 1
     Apply-PolicyUpdate
-    Write-Host "Drives (files only): BLOCKED. Reconnect your RDP session." -ForegroundColor Yellow
+    Write-Host "Drives (files only): BLOCKED. Reconnect RDP if needed." -ForegroundColor Yellow
 }
 
 function Show-Status {
     $s = Get-RdpRedirectionStatus
     $os = Get-OsCaption
+    $clipRunning = Get-Process -Name rdpclip -ErrorAction SilentlyContinue
 
     Write-Host ""
     Write-Host "========== RDP Redirection Status ==========" -ForegroundColor Cyan
     Write-Host "OS: $os"
+    if ($clipRunning) {
+        Write-Host "rdpclip.exe: running ($($clipRunning.Count) instance(s))"
+    } else {
+        Write-Host "rdpclip.exe: not running" -ForegroundColor Yellow
+    }
     Write-Host ""
     Write-Host "Clipboard (fDisableClip) = text copy/paste:"
     Write-Host "  GPO policy: $(Format-PolicyState $s.ClipPolicy)  (value: $($s.ClipPolicy))"
@@ -149,7 +161,7 @@ function Show-Status {
         Write-Host "  >> Effective: files / drives ALLOWED" -ForegroundColor Green
     }
     Write-Host ""
-    Write-Host "Tip: reconnect RDP after changes; enable local drives in mstsc if needed."
+    Write-Host "Tip: enable local drives in mstsc if file copy fails."
     Write-Host "============================================" -ForegroundColor Cyan
     Write-Host ""
 }
@@ -170,13 +182,14 @@ function Show-Menu {
     Write-Host "  6) Block drives"
     Write-Host "  ------------------------------------"
     Write-Host "  7) Show current status"
+    Write-Host "  8) Restart rdpclip.exe only"
     Write-Host "  0) Exit"
     Write-Host ""
 }
 
 while ($true) {
     Show-Menu
-    Write-Host "Enter choice (0-7): " -NoNewline
+    Write-Host "Enter choice (0-8): " -NoNewline
     $choice = Read-Host
     switch ($choice) {
         "1" { Set-AllAllow }
@@ -186,6 +199,7 @@ while ($true) {
         "5" { Set-DriveAllow }
         "6" { Set-DriveBlock }
         "7" { Show-Status }
+        "8" { Restart-RdpClip }
         "0" { break }
         default { Write-Host "Invalid option." -ForegroundColor Red }
     }

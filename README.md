@@ -13,6 +13,14 @@ Open source takes effort — sponsorship is appreciated:
 
 👉 [Afdian / 爱发电](https://ifdian.net/a/shellsec)
 
+## Related tools · 相关工具
+
+More Windows Server / RDS utilities by [shellsec](https://github.com/shellsec):
+
+| Project | Description |
+|---------|-------------|
+| [RDS_Grace_Period_Reset](https://github.com/shellsec/RDS_Grace_Period_Reset) | Windows Server RDS grace period reset tool · RDS 宽限期重置工具 |
+
 ---
 
 # English
@@ -39,28 +47,61 @@ How it works: writes the equivalent GPO registry keys and runs `gpupdate /force`
 | File | Description |
 |------|-------------|
 | `RDPClipSwitcher.ps1` | Interactive menu (enable / disable / status) |
+| `RDPClipSwitcher-Lib.ps1` | Shared helper (`Restart-RdpClip`) |
 | `Run-RDPClipSwitcher.bat` | Double-click to launch menu with elevation |
+| `Restart-RdpClip.ps1` | Restart `rdpclip.exe` only (no policy change) |
 | `Enable-RdpClipboard.ps1` | Allow clipboard redirection |
 | `Disable-RdpClipboard.ps1` | Block clipboard redirection |
 | `Enable-RdpDriveRedirection.ps1` | Allow drive redirection (file channel) |
 | `Disable-RdpDriveRedirection.ps1` | Block drive redirection |
+
+## Installation
+
+**Recommended path (standard deployment):**
+
+`C:\Program Files\RDPClipSwitcher`
+
+**Alternative (testing / frequent edits, no spaces in path):**
+
+`C:\Tools\RDPClipSwitcher`
+
+First-time setup on the RDP **server** (elevated PowerShell):
+
+```powershell
+$dest = "${env:ProgramFiles}\RDPClipSwitcher"
+New-Item -ItemType Directory -Path $dest -Force
+git clone https://github.com/shellsec/RDPClipSwitcher.git $dest
+
+Set-ExecutionPolicy Bypass -Scope Process -Force
+& "$dest\RDPClipSwitcher.ps1"
+```
+
+Or download a zip from [Releases](https://github.com/shellsec/RDPClipSwitcher/releases) and extract the **entire folder** (including `RDPClipSwitcher-Lib.ps1`) to `$dest`.
+
+Daily use: double-click `Run-RDPClipSwitcher.bat` in that folder.
+
+| Note | Detail |
+|------|--------|
+| Updates | Writing to Program Files requires Administrator |
+| Path with spaces | Always quote: `& "C:\Program Files\RDPClipSwitcher\RDPClipSwitcher.ps1"` |
+| Do not copy single files | Keep all scripts in the same directory |
 
 ## Quick start
 
 ### Get from GitHub
 
 ```powershell
-git clone https://github.com/shellsec/RDPClipSwitcher.git
-cd RDPClipSwitcher
+git clone https://github.com/shellsec/RDPClipSwitcher.git "${env:ProgramFiles}\RDPClipSwitcher"
+cd "${env:ProgramFiles}\RDPClipSwitcher"
 ```
 
-Or download a zip from [Releases](https://github.com/shellsec/RDPClipSwitcher/releases) and copy to the remote server.
+Or download a zip from [Releases](https://github.com/shellsec/RDPClipSwitcher/releases) and extract to the install path above.
 
 ### Option A: Menu (recommended)
 
-1. Copy this folder to the remote server.
+1. Install to `C:\Program Files\RDPClipSwitcher` (see [Installation](#installation)).
 2. Double-click `Run-RDPClipSwitcher.bat` (requests admin elevation).
-3. Follow the menu, then **disconnect and reconnect** your RDP session.
+3. Follow the menu.
 
 Or in an elevated PowerShell:
 
@@ -82,6 +123,7 @@ Menu:
   5) Allow drives
   6) Block drives
   7) Show current status
+  8) Restart rdpclip.exe only
   0) Exit
 ```
 
@@ -135,8 +177,9 @@ When allowing clipboard, scripts set the GPO key to `0` and clear any hard overr
 ## When changes take effect
 
 1. Script completes successfully on the server as Administrator.
-2. **Disconnect and reconnect** the RDP session (usually enough).
-3. In rare cases, restart the `TermService` service; usually not required.
+2. Clipboard changes **automatically restart `rdpclip.exe`** (kill all instances, start in the current session).
+3. If clipboard still fails, **disconnect and reconnect** RDP. On multi-user RDS, other sessions may need reconnect.
+4. In rare cases, restart the `TermService` service; usually not required.
 
 ## Text copies but files don't?
 
@@ -193,28 +236,61 @@ Or use menu option `3` for a summary of GPO keys, RDP-Tcp override, and effectiv
 | 文件 | 说明 |
 |------|------|
 | `RDPClipSwitcher.ps1` | 菜单式主脚本（开/关/查状态） |
+| `RDPClipSwitcher-Lib.ps1` | 公共函数（重启 rdpclip） |
 | `Run-RDPClipSwitcher.bat` | 双击自动提权启动菜单 |
+| `Restart-RdpClip.ps1` | 仅重启 rdpclip.exe（不改策略） |
 | `Enable-RdpClipboard.ps1` | 一键允许剪贴板 |
 | `Disable-RdpClipboard.ps1` | 一键禁止剪贴板 |
 | `Enable-RdpDriveRedirection.ps1` | 一键允许驱动器重定向（文件通道） |
 | `Disable-RdpDriveRedirection.ps1` | 一键禁止驱动器重定向 |
+
+## 安装路径
+
+**推荐路径（正式部署）：**
+
+`C:\Program Files\RDPClipSwitcher`
+
+**备选路径（临时测试、常改脚本，路径无空格）：**
+
+`C:\Tools\RDPClipSwitcher`
+
+在 RDP **服务端**首次部署（管理员 PowerShell）：
+
+```powershell
+$dest = "${env:ProgramFiles}\RDPClipSwitcher"
+New-Item -ItemType Directory -Path $dest -Force
+git clone https://github.com/shellsec/RDPClipSwitcher.git $dest
+
+Set-ExecutionPolicy Bypass -Scope Process -Force
+& "$dest\RDPClipSwitcher.ps1"
+```
+
+或从 [Releases](https://github.com/shellsec/RDPClipSwitcher/releases) 下载 zip，将**整个文件夹**（含 `RDPClipSwitcher-Lib.ps1`）解压到 `$dest`。
+
+日常使用：双击该目录下的 `Run-RDPClipSwitcher.bat`。
+
+| 说明 | 内容 |
+|------|------|
+| 更新 | 写入 Program Files 需要管理员权限 |
+| 路径含空格 | 执行时请加引号：`& "C:\Program Files\RDPClipSwitcher\RDPClipSwitcher.ps1"` |
+| 勿只复制单个脚本 | 所有 `.ps1` 须在同一目录 |
 
 ## 快速使用
 
 ### 从 GitHub 获取
 
 ```powershell
-git clone https://github.com/shellsec/RDPClipSwitcher.git
-cd RDPClipSwitcher
+git clone https://github.com/shellsec/RDPClipSwitcher.git "${env:ProgramFiles}\RDPClipSwitcher"
+cd "${env:ProgramFiles}\RDPClipSwitcher"
 ```
 
-或下载 [Releases](https://github.com/shellsec/RDPClipSwitcher/releases) 压缩包，解压到远程服务器。
+或下载 [Releases](https://github.com/shellsec/RDPClipSwitcher/releases) 压缩包，解压到上述安装路径。
 
 ### 方式一：菜单（推荐）
 
-1. 将本目录复制到远程服务器。
+1. 安装到 `C:\Program Files\RDPClipSwitcher`（见 [安装路径](#安装路径)）。
 2. 双击 `Run-RDPClipSwitcher.bat`（会自动请求管理员权限）。
-3. 按提示选择操作，完成后**断开 RDP 重新连接**。
+3. 按提示选择操作。
 
 或在管理员 PowerShell 中：
 
@@ -236,6 +312,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
   5) Allow drives
   6) Block drives
   7) Show current status
+  8) Restart rdpclip.exe only
   0) Exit
 ```
 
@@ -289,8 +366,9 @@ GPO 路径：
 ## 生效条件
 
 1. 脚本在服务端以管理员身份执行成功。
-2. **断开当前 RDP 会话并重新连接**（多数情况足够）。
-3. 极少数环境需重启 `TermService` 服务；一般不必。
+2. 修改剪贴板策略后会**自动重启 `rdpclip.exe`**（结束所有实例，并在当前会话重新启动）。
+3. 若仍无效，**断开 RDP 重连**；多用户 RDS 上其他会话可能也需重连。
+4. 极少数环境需重启 `TermService` 服务；一般不必。
 
 ## 文本能复制、文件复制不了？
 
